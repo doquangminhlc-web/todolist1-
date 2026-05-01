@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>To-do Học Tập</title>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"/>
+  <style>
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      --bg: #f0f4ff;
+      --surface: #ffffff;
+      --surface2: #f7f9ff;
+      --border: #e2e8f8;
+      --text: #1a1f36;
+      --text-muted: #6b7499;
+      --accent: #4f6ef7;
+      --accent2: #7c3aed;
+      --accent-soft: #eef1ff;
+      --done-color: #a0aec0;
+      --danger: #f56565;
+      --success: #48bb78;
+      --shadow: 0 4px 24px rgba(79,110,247,0.10);
+      --shadow-lg: 0 8px 40px rgba(79,110,247,0.18);
+      --radius: 16px;
+      --transition: 0.22s cubic-bezier(.4,0,.2,1);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f1120;
+      --surface: #181c2e;
+      --surface2: #1e2340;
+      --border: #2a3060;
+      --text: #e8ecff;
+      --text-muted: #7b87b8;
+      --accent: #6680ff;
+      --accent2: #a78bfa;
+      --accent-soft: #1e2340;
+      --done-color: #4a5270;
+      --danger: #fc8181;
+      --success: #68d391;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background var(--transition), color var(--transition);
+      padding-bottom: 40px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 10%, rgba(79,110,247,0.13) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 35% at 80% 80%, rgba(124,58,237,0.10) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== LAYOUT ===== */
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 28px 16px 0;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .header-left h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+
+    .header-left p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    #darkToggle {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      border-radius: 50px;
+      padding: 7px 18px;
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all var(--transition);
+      box-shadow: var(--shadow);
+    }
+    #darkToggle:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ===== TABS ===== */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 11px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: var(--shadow);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: var(--shadow-lg);
+    }
+    .tab-btn:not(.active):hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ===== PANEL ===== */
+    .panel { display: none; animation: fadeUp 0.3s ease; }
+    .panel.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== CARD ===== */
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    /* ===== INPUT AREA ===== */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .input-group label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-group.grow { flex: 1; min-width: 160px; }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    select {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      width: 100%;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,110,247,0.12);
+    }
+
+    .btn-add {
+      padding: 10px 22px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 4px 14px rgba(79,110,247,0.3);
+      white-space: nowrap;
+      height: 40px;
+    }
+    .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,110,247,0.4); }
+    .btn-add:active { transform: translateY(0); }
+
+    /* ===== STATS ===== */
+    .stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: var(--accent-soft);
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      padding: 6px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ===== FILTER ROW ===== */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .filter-btn {
+      padding: 5px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      background: var(--surface);
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .filter-btn:not(.active):hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ===== TASK LIST ===== */
+    #taskList { list-style: none; }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      transition: all var(--transition);
+      animation: slideIn 0.25s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .task-item:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(79,110,247,0.10); transform: translateX(3px); }
+
+    .task-item.done {
+      opacity: 0.55;
+      border-color: var(--border);
+    }
+    .task-item.done .task-text { text-decoration: line-through; color: var(--done-color); }
+
+    .check-btn {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+      font-size: 12px;
+      color: transparent;
+    }
+    .task-item.done .check-btn {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+    }
+    .check-btn:hover { border-color: var(--success); background: rgba(72,187,120,0.12); }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-text { font-size: 0.92rem; font-weight: 500; word-break: break-word; }
+    .task-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .task-meta span { display: flex; align-items: center; gap: 3px; }
+
+    .priority-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .p-high { background: rgba(245,101,101,0.12); color: var(--danger); }
+    .p-mid  { background: rgba(237,137,54,0.12);  color: #ed8936; }
+    .p-low  { background: rgba(72,187,120,0.12);  color: var(--success); }
+
+    .del-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 4px 6px;
+      border-radius: 8px;
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+    .del-btn:hover { background: rgba(245,101,101,0.12); color: var(--danger); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .empty-state p { font-size: 0.9rem; }
+
+    /* ===== CALENDAR PANEL ===== */
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .cal-nav button {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      width: 32px; height: 32px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all var(--transition);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cal-nav button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .cal-nav h2 { font-size: 1rem; font-weight: 600; min-width: 130px; text-align: center; }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-day-name {
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 6px 0;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 0.85rem;
+      font-weight: 500;
+      position: relative;
+      border: 1.5px solid transparent;
+    }
+    .cal-day:hover:not(.empty) { background: var(--accent-soft); border-color: var(--accent); }
+    .cal-day.today { background: var(--accent); color: #fff; font-weight: 700; }
+    .cal-day.selected:not(.today) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+    .cal-day.has-task::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--accent2);
+    }
+    .cal-day.today.has-task::after { background: rgba(255,255,255,0.8); }
+    .cal-day.empty { cursor: default; }
+    .cal-day.other-month { opacity: 0.3; }
+
+    /* ===== TIMELINE ===== */
+    .day-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      padding-left: 4px;
+    }
+    .day-label span { color: var(--accent); }
+
+    .timeline { position: relative; padding-left: 52px; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 38px;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent), var(--accent2), transparent);
+      border-radius: 2px;
+      opacity: 0.3;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 14px;
+      animation: slideIn 0.25s ease;
+    }
+    .timeline-time {
+      position: absolute;
+      left: -52px;
+      top: 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent);
+      width: 44px;
+      text-align: right;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -17px;
+      top: 14px;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+    .timeline-dot.done { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+
+    .timeline-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+    .timeline-card:hover { border-color: var(--accent); transform: translateX(3px); }
+    .timeline-card.done-card { opacity: 0.5; }
+    .timeline-card.done-card .tc-title { text-decoration: line-through; color: var(--done-color); }
+
+    .tc-title { font-size: 0.88rem; font-weight: 600; }
+    .tc-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; display: flex; gap: 8px; align-items: center; }
+
+    .no-tasks-day {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .input-row { flex-direction: column; }
+      .btn-add { width: 100%; height: 44px; }
+      .cal-day { font-size: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-left">
+      <h1>📚 To-do Học Tập</h1>
+      <p id="currentDateTime">--</p>
+    </div>
+    <button id="darkToggle">🌙 Dark Mode</button>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="list">📋 Danh sách</button>
+    <button class="tab-btn" data-tab="calendar">📅 Lịch & Timeline</button>
+  </div>
+
+  <!-- ===== PANEL: LIST ===== -->
+  <div class="panel active" id="panel-list">
+
+    <!-- Add Task Card -->
+    <div class="card">
+      <div class="input-row">
+        <div class="input-group grow">
+          <label>Công việc</label>
+          <input type="text" id="taskInput" placeholder="Nhập công việc học tập..." />
+        </div>
+        <div class="input-group">
+          <label>Ngày</label>
+          <input type="date" id="taskDate" />
+        </div>
+        <div class="input-group">
+          <label>Giờ</label>
+          <input type="time" id="taskTime" />
+        </div>
+        <div class="input-group">
+          <label>Ưu tiên</label>
+          <select id="taskPriority">
+            <option value="high">🔴 Cao</option>
+            <option value="mid" selected>🟡 Vừa</option>
+            <option value="low">🟢 Thấp</option>
+          </select>
+        </div>
+        <button class="btn-add" id="addBtn">+ Thêm</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats" style="margin-bottom:14px;">
+      <div class="stat-pill">📌 Còn lại: <strong id="statRemain">0</strong></div>
+      <div class="stat-pill">✅ Hoàn thành: <strong id="statDone">0</strong></div>
+      <div class="stat-pill">📦 Tổng: <strong id="statTotal">0</strong></div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="all">Tất cả</button>
+      <button class="filter-btn" data-filter="pending">Chưa xong</button>
+      <button class="filter-btn" data-filter="done">Đã xong</button>
+      <button class="filter-btn" data-filter="today">Hôm nay</button>
+    </div>
+
+    <!-- Task List -->
+    <ul id="taskList"></ul>
+  </div>
+
+  <!-- ===== PANEL: CALENDAR ===== -->
+  <div class="panel" id="panel-calendar">
+
+    <div class="card">
+      <div class="calendar-header">
+        <div class="cal-nav">
+          <button id="prevMonth">‹</button>
+          <h2 id="calMonthLabel">--</h2>
+          <button id="nextMonth">›</button>
+        </div>
+        <button class="filter-btn active" id="todayBtn">Hôm nay</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <!-- Day Timeline -->
+    <div class="card">
+      <div class="day-label">Lịch ngày <span id="selectedDayLabel">--</span></div>
+      <div id="timelineContainer"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  /* ==========================================
+     STATE & STORAGE
+  ========================================== */
+  let tasks = JSON.parse(localStorage.getItem('studyTasks') || '[]');
+  let filter = 'all';
+  let calYear, calMonth, selectedDate;
+
+  function saveTasks() {
+    localStorage.setItem('studyTasks', JSON.stringify(tasks));
+  }
+
+  /* ==========================================
+     HELPERS
+  ========================================== */
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function formatTime(timeStr) {
+    return timeStr || '';
+  }
+
+  function priorityLabel(p) {
+    return { high: '🔴 Cao', mid: '🟡 Vừa', low: '🟢 Thấp' }[p] || '';
+  }
+
+  function priorityClass(p) {
+    return { high: 'p-high', mid: 'p-mid', low: 'p-low' }[p] || '';
+  }
+
+  /* ==========================================
+     LIVE CLOCK
+  ========================================== */
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('currentDateTime').textContent =
+      now.toLocaleDateString('vi-VN', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+      + ' — ' + now.toLocaleTimeString('vi-VN');
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  /* ==========================================
+     DARK MODE
+  ========================================== */
+  const darkBtn = document.getElementById('darkToggle');
+  let darkMode = localStorage.getItem('darkMode') === '1';
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : '');
+    darkBtn.textContent = darkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+    localStorage.setItem('darkMode', darkMode ? '1' : '0');
+  }
+  applyTheme();
+  darkBtn.addEventListener('click', () => { darkMode = !darkMode; applyTheme(); });
+
+  /* ==========================================
+     TABS
+  ========================================== */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'calendar') renderCalendar();
+    });
+  });
+
+  /* ==========================================
+     ADD TASK
+  ========================================== */
+  document.getElementById('addBtn').addEventListener('click', addTask);
+  document.getElementById('taskInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  function addTask() {
+    const text = document.getEl
